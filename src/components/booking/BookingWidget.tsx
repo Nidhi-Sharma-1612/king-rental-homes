@@ -1,0 +1,193 @@
+"use client";
+
+import { useState } from "react";
+import { useSearchParams } from "next/navigation";
+import type { DateRange } from "react-day-picker";
+import { AnimatePresence, motion } from "framer-motion";
+import { CalendarDays, ChevronDown, ShieldCheck, Users, X } from "lucide-react";
+import clsx from "clsx";
+import { Panel } from "@/components/ui/Panel";
+import { Rating } from "@/components/ui/Rating";
+import { DateRangePicker } from "@/components/booking/DateRangePicker";
+import { GuestPicker, guestSummary, type Guests } from "@/components/booking/GuestPicker";
+import { formatRange, nights, usd } from "@/lib/format";
+import { parseSearch, type SearchState } from "@/lib/search";
+import type { Property } from "@/lib/types";
+
+export function BookingWidgetFromUrl({ property }: { property: Property }) {
+  const params = useSearchParams();
+  return <BookingWidget property={property} initial={parseSearch(params)} />;
+}
+
+export function BookingWidget({ property: p, initial }: { property: Property; initial?: SearchState }) {
+  const [range, setRange] = useState<DateRange | undefined>(initial?.start ? { from: initial.start, to: initial.end } : undefined);
+  const [guests, setGuests] = useState<Guests>({
+    adults: Math.min(initial?.adults ?? 2, p.guests),
+    children: Math.min(initial?.children ?? 0, Math.max(0, p.guests - (initial?.adults ?? 2))),
+    pets: initial?.pets ?? 0,
+  });
+  const [field, setField] = useState<"dates" | "guests" | null>(null);
+  const [sheet, setSheet] = useState(false);
+
+  const n = nights(range?.from, range?.to);
+  const hasDates = n > 0;
+
+  const form = (inSheet: boolean) => (
+    <div className="relative">
+      <div className="overflow-hidden rounded-2xl border border-line">
+        <button
+          type="button"
+          data-panel-trigger
+          onClick={() => setField(field === "dates" ? null : "dates")}
+          className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-sand"
+          aria-expanded={field === "dates"}
+        >
+          <CalendarDays className="size-5 text-sage-deep" aria-hidden />
+          <span className="flex-1">
+            <span className="eyebrow block text-[0.62rem]! text-muted">Check-in → Check-out</span>
+            <span className={clsx("font-semibold", !range?.from && "text-muted/80")}>{range?.from ? formatRange(range.from, range.to) : "Add your dates"}</span>
+          </span>
+          <ChevronDown className="size-4 text-muted" aria-hidden />
+        </button>
+        <button
+          type="button"
+          data-panel-trigger
+          onClick={() => setField(field === "guests" ? null : "guests")}
+          className="flex w-full items-center gap-3 border-t border-line px-4 py-3 text-left hover:bg-sand"
+          aria-expanded={field === "guests"}
+        >
+          <Users className="size-5 text-sage-deep" aria-hidden />
+          <span className="flex-1">
+            <span className="eyebrow block text-[0.62rem]! text-muted">Guests</span>
+            <span className="font-semibold">{guestSummary(guests)}</span>
+          </span>
+          <ChevronDown className="size-4 text-muted" aria-hidden />
+        </button>
+      </div>
+
+      {inSheet ? (
+        <AnimatePresence initial={false}>
+          {field && (
+            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+              <div className="pt-4">
+                {field === "dates" ? <DateRangePicker value={range} onChange={setRange} /> : <GuestPicker value={guests} onChange={setGuests} maxGuests={p.guests} />}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      ) : (
+        <>
+          <Panel open={field === "dates"} onClose={() => setField(null)} title="Select dates" align="right" className="w-max"
+            footer={
+              <div className="flex items-center justify-between">
+                <button type="button" className="text-sm font-semibold underline underline-offset-4" onClick={() => setRange(undefined)}>Clear</button>
+                <button type="button" className="rounded-full bg-ink px-5 py-2.5 text-sm font-semibold text-paper" onClick={() => setField(null)}>Done</button>
+              </div>
+            }
+          >
+            <DateRangePicker value={range} onChange={setRange} />
+          </Panel>
+          <Panel open={field === "guests"} onClose={() => setField(null)} title="Guests" align="right" className="w-[22rem]">
+            <GuestPicker value={guests} onChange={setGuests} maxGuests={p.guests} />
+          </Panel>
+        </>
+      )}
+
+      {hasDates ? (
+        // Phase 1: no action yet. Phase 2 hooks this up to checkout/payment.
+        <button type="button" className="mt-4 flex h-13 w-full items-center justify-center gap-2 rounded-full bg-clay font-semibold text-white shadow-soft transition-colors hover:bg-clay-deep">
+          Book now
+        </button>
+      ) : (
+        <button type="button" data-panel-trigger onClick={() => setField("dates")} className="mt-4 flex h-13 w-full items-center justify-center rounded-full bg-ink font-semibold text-paper transition-colors hover:bg-ink-deep">
+          Check availability
+        </button>
+      )}
+
+      {hasDates && (
+        <dl className="mt-5 space-y-2.5 text-[0.95rem]">
+          <div className="flex justify-between text-muted">
+            <dt className="underline decoration-line underline-offset-4">
+              {usd(p.pricePerNight)} × {n} night{n === 1 ? "" : "s"}
+            </dt>
+            <dd>{usd(p.pricePerNight * n)}</dd>
+          </div>
+          <div className="flex justify-between border-t border-line pt-3 font-semibold text-text">
+            <dt>Estimated total</dt>
+            <dd>{usd(p.pricePerNight * n)}</dd>
+          </div>
+        </dl>
+      )}
+      <p className="mt-4 flex items-start gap-2 text-xs leading-relaxed text-muted">
+        <ShieldCheck className="mt-0.5 size-4 shrink-0 text-sage-deep" aria-hidden />
+        You won&apos;t be charged yet. Nightly rates vary by date. Your final price, fees and taxes are confirmed at secure checkout.
+      </p>
+    </div>
+  );
+
+  return (
+    <>
+      {/* Desktop: sticky card */}
+      <aside className="sticky top-[calc(var(--header-h)+1.5rem)] hidden rounded-[1.75rem] border border-line bg-paper p-6 shadow-lift lg:block" aria-label="Book this home">
+        <div className="mb-5 flex items-baseline justify-between gap-4">
+          <p>
+            <span className="text-sm text-muted">From </span>
+            <span className="font-display text-3xl text-ink">{usd(p.pricePerNight)}</span>
+            <span className="text-muted"> / night</span>
+          </p>
+          <Rating rating={p.rating} />
+        </div>
+        {form(false)}
+      </aside>
+
+      {/* Mobile & tablet: bottom bar + sheet */}
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-paper/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl lg:hidden">
+        <div className="container-x flex items-center justify-between gap-4 py-3">
+          <div className="min-w-0">
+            <p className="truncate">
+              <span className="text-lg font-bold text-text">{usd(p.pricePerNight)}</span>
+              <span className="text-sm text-muted"> / night</span>
+            </p>
+            <p className="truncate text-sm text-muted">{range?.from ? formatRange(range.from, range.to) : `Rated ${p.rating?.toFixed(2)} ★ · ${p.reviewCount} reviews`}</p>
+          </div>
+          {hasDates ? (
+            <button type="button" className="inline-flex h-12 shrink-0 items-center gap-1.5 rounded-full bg-clay px-6 font-semibold text-white">
+              Book now
+            </button>
+          ) : (
+            <button type="button" onClick={() => { setSheet(true); setField("dates"); }} className="h-12 shrink-0 rounded-full bg-ink px-6 font-semibold text-paper">
+              Check dates
+            </button>
+          )}
+        </div>
+      </div>
+
+      <AnimatePresence>
+        {sheet && (
+          <div className="fixed inset-0 z-[70] lg:hidden" role="dialog" aria-modal="true" aria-label="Book this home">
+            <motion.div className="absolute inset-0 bg-ink-deep/50 backdrop-blur-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSheet(false)} />
+            <motion.div
+              className="absolute inset-x-0 bottom-0 max-h-[92dvh] overflow-y-auto rounded-t-[1.75rem] bg-paper px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-3 shadow-lift sm:mx-auto sm:max-w-lg"
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 32, stiffness: 320 }}
+            >
+              <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-line" aria-hidden />
+              <div className="mb-5 flex items-center justify-between">
+                <p>
+                  <span className="font-display text-2xl text-ink">{usd(p.pricePerNight)}</span>
+                  <span className="text-muted"> / night</span>
+                </p>
+                <button type="button" onClick={() => setSheet(false)} aria-label="Close" className="grid size-10 place-items-center rounded-full hover:bg-ink/5">
+                  <X className="size-5" />
+                </button>
+              </div>
+              {form(true)}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+}

@@ -1,26 +1,191 @@
 @import "tailwindcss";
 
+/* ─── Brand tokens (from the King Rental Homes logo: slate-teal on sage-cream) ─── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --ink: #1f3f4c;
+  --ink-deep: #132a33;
+  --ink-soft: #2e5566;
+  --sage: #8fa98a;
+  --sage-deep: #5f7a5b;
+  --mist: #eef4e2;
+  --sand: #f7f3ec;
+  --paper: #fffdf9;
+  --clay: #c8794b;
+  --clay-deep: #a95f34;
+  --line: #e3ddd2;
+  --text: #22282b;
+  --muted: #5e6a6e;
+
+  --radius-card: 1.25rem;
+  --shadow-soft: 0 1px 2px rgb(19 42 51 / 0.04), 0 8px 24px -8px rgb(19 42 51 / 0.12);
+  --shadow-lift: 0 2px 4px rgb(19 42 51 / 0.05), 0 24px 48px -16px rgb(19 42 51 / 0.25);
+  --header-h: 4.5rem;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-ink: var(--ink);
+  --color-ink-deep: var(--ink-deep);
+  --color-ink-soft: var(--ink-soft);
+  --color-sage: var(--sage);
+  --color-sage-deep: var(--sage-deep);
+  --color-mist: var(--mist);
+  --color-sand: var(--sand);
+  --color-paper: var(--paper);
+  --color-clay: var(--clay);
+  --color-clay-deep: var(--clay-deep);
+  --color-line: var(--line);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+
+  --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-fraunces), ui-serif, Georgia, serif;
+
+  --shadow-soft: var(--shadow-soft);
+  --shadow-lift: var(--shadow-lift);
+  --radius-card: var(--radius-card);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--sand);
+  color: var(--text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--sage);
+  color: var(--ink-deep);
+}
+
+:focus-visible {
+  outline: 2px solid var(--clay);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* ─── Fluid type scale ─── */
+@layer components {
+  .display-xl {
+    font-family: var(--font-display);
+    font-size: clamp(2.5rem, 1.6rem + 4.2vw, 5.25rem);
+    line-height: 1.02;
+    letter-spacing: -0.025em;
+    font-weight: 400;
+    font-variation-settings: "SOFT" 60, "opsz" 144;
+  }
+  .display-lg {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 1.4rem + 2.6vw, 3.5rem);
+    line-height: 1.08;
+    letter-spacing: -0.02em;
+    font-weight: 400;
+    font-variation-settings: "SOFT" 60, "opsz" 120;
+  }
+  .display-md {
+    font-family: var(--font-display);
+    font-size: clamp(1.5rem, 1.2rem + 1.2vw, 2.25rem);
+    line-height: 1.15;
+    letter-spacing: -0.015em;
+    font-weight: 400;
+  }
+  .eyebrow {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+  .lede {
+    font-size: clamp(1.0625rem, 1rem + 0.3vw, 1.25rem);
+    line-height: 1.65;
+  }
+  .container-x {
+    width: 100%;
+    max-width: 80rem;
+    margin-inline: auto;
+    padding-inline: 1rem;
+  }
+  @media (min-width: 640px) {
+    .container-x {
+      padding-inline: 1.5rem;
+    }
+  }
+  @media (min-width: 1024px) {
+    .container-x {
+      padding-inline: 2rem;
+    }
+  }
+  .section-y {
+    padding-block: clamp(4rem, 3rem + 4vw, 7rem);
+  }
+}
+
+/* Hide scrollbars on horizontal rails while keeping them scrollable */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* ─── react-day-picker theming (html prefix outranks the library stylesheet) ─── */
+html .rdp-root {
+  --rdp-accent-color: var(--ink);
+  --rdp-accent-background-color: var(--mist);
+  --rdp-today-color: var(--clay-deep);
+  --rdp-day-height: 2.6rem;
+  --rdp-day-width: 2.6rem;
+  --rdp-day_button-height: 2.5rem;
+  --rdp-day_button-width: 2.5rem;
+  --rdp-range_middle-background-color: var(--mist);
+  --rdp-range_start-date-background-color: var(--ink);
+  --rdp-range_end-date-background-color: var(--ink);
+  --rdp-selected-border: 2px solid var(--ink);
+  --rdp-months-gap: 2.5rem;
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+}
+html .rdp-root .rdp-caption_label {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 400;
+}
+html .rdp-root .rdp-chevron {
+  fill: var(--ink);
+}
+html .rdp-root .rdp-day_button {
+  border-radius: 999px;
+}
+html .rdp-root .rdp-weekday {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Enlarges the touch area of small text links/buttons without changing layout */
+@utility hit {
+  position: relative;
+  &::before {
+    content: "";
+    position: absolute;
+    inset: -0.5rem -0.25rem;
+  }
 }
