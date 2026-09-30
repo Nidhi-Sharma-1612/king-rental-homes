@@ -4,12 +4,14 @@ import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import type { DateRange } from "react-day-picker";
 import { AnimatePresence, motion } from "framer-motion";
-import { CalendarDays, ChevronDown, ShieldCheck, Users, X } from "lucide-react";
+import Link from "next/link";
+import { CalendarDays, ChevronDown, Loader2, Lock, ShieldCheck, TriangleAlert, Users, X } from "lucide-react";
 import clsx from "clsx";
 import { Panel } from "@/components/ui/Panel";
 import { Rating } from "@/components/ui/Rating";
 import { DateRangePicker } from "@/components/booking/DateRangePicker";
 import { GuestPicker, guestSummary, type Guests } from "@/components/booking/GuestPicker";
+import { useBooking } from "@/components/booking/useBooking";
 import { formatRange, nights, usd } from "@/lib/format";
 import { parseSearch, type SearchState } from "@/lib/search";
 import type { Property } from "@/lib/types";
@@ -31,6 +33,12 @@ export function BookingWidget({ property: p, initial }: { property: Property; in
 
   const n = nights(range?.from, range?.to);
   const hasDates = n > 0;
+  const { enabled, disabled, quote, booking, book } = useBooking(p.slug, range, guests);
+  const live = enabled !== false; // keys configured (or still checking)
+  const money = (v: number) =>
+    new Intl.NumberFormat("en-US", { style: "currency", currency: quote.status === "ready" ? quote.quote.currency : "USD" }).format(v);
+  const canBook = live && hasDates && quote.status === "ready" && !booking.busy;
+  const bookLabel = booking.busy ? "Opening secure checkout…" : quote.status === "loading" ? "Checking price…" : "Book now";
 
   const form = (inSheet: boolean) => (
     <div className="relative">
@@ -70,7 +78,7 @@ export function BookingWidget({ property: p, initial }: { property: Property; in
           {field && (
             <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
               <div className="pt-4">
-                {field === "dates" ? <DateRangePicker value={range} onChange={setRange} /> : <GuestPicker value={guests} onChange={setGuests} maxGuests={p.guests} />}
+                {field === "dates" ? <DateRangePicker value={range} onChange={setRange} disabled={disabled} /> : <GuestPicker value={guests} onChange={setGuests} maxGuests={p.guests} />}
               </div>
             </motion.div>
           )}
@@ -85,7 +93,7 @@ export function BookingWidget({ property: p, initial }: { property: Property; in
               </div>
             }
           >
-            <DateRangePicker value={range} onChange={setRange} />
+            <DateRangePicker value={range} onChange={setRange} disabled={disabled} />
           </Panel>
           <Panel open={field === "guests"} onClose={() => setField(null)} title="Guests" align="right" className="w-[22rem]">
             <GuestPicker value={guests} onChange={setGuests} maxGuests={p.guests} />
@@ -93,18 +101,55 @@ export function BookingWidget({ property: p, initial }: { property: Property; in
         </>
       )}
 
-      {hasDates ? (
-        // Phase 1: no action yet. Phase 2 hooks this up to checkout/payment.
-        <button type="button" className="mt-4 flex h-13 w-full items-center justify-center gap-2 rounded-full bg-clay font-semibold text-white shadow-soft transition-colors hover:bg-clay-deep">
-          Book now
-        </button>
-      ) : (
+      {!hasDates ? (
         <button type="button" data-panel-trigger onClick={() => setField("dates")} className="mt-4 flex h-13 w-full items-center justify-center rounded-full bg-ink font-semibold text-paper transition-colors hover:bg-ink-deep">
           Check availability
         </button>
+      ) : live ? (
+        <button
+          type="button"
+          onClick={book}
+          disabled={!canBook}
+          className="mt-4 flex h-13 w-full items-center justify-center gap-2 rounded-full bg-clay font-semibold text-white shadow-soft transition-colors hover:bg-clay-deep disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {(booking.busy || quote.status === "loading") && <Loader2 className="size-4 animate-spin" aria-hidden />}
+          {bookLabel}
+        </button>
+      ) : (
+        <Link href="/contact" className="mt-4 flex h-13 w-full items-center justify-center rounded-full bg-clay font-semibold text-white shadow-soft transition-colors hover:bg-clay-deep">
+          Request to book
+        </Link>
       )}
 
-      {hasDates && (
+      {(quote.status === "error" || booking.error) && (
+        <p role="alert" className="mt-3 flex items-start gap-2 rounded-xl bg-clay/10 px-3 py-2.5 text-sm text-clay-deep">
+          <TriangleAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
+          {booking.error ?? (quote.status === "error" ? quote.message : "")}
+        </p>
+      )}
+
+      {hasDates && quote.status === "ready" && (
+        <dl className="mt-5 space-y-2.5 text-[0.95rem]" aria-live="polite">
+          {quote.quote.lines.map((l) => (
+            <div key={l.label} className="flex justify-between gap-4 text-muted">
+              <dt>{l.label}</dt>
+              <dd>{money(l.amount)}</dd>
+            </div>
+          ))}
+          <div className="flex justify-between border-t border-line pt-3 font-semibold text-text">
+            <dt>Total</dt>
+            <dd>{money(quote.quote.total)}</dd>
+          </div>
+        </dl>
+      )}
+      {hasDates && quote.status === "loading" && (
+        <div className="mt-5 space-y-3" aria-hidden>
+          <div className="h-4 w-3/4 animate-pulse rounded bg-sand" />
+          <div className="h-4 w-1/2 animate-pulse rounded bg-sand" />
+          <div className="h-5 w-full animate-pulse rounded bg-sand" />
+        </div>
+      )}
+      {hasDates && !live && (
         <dl className="mt-5 space-y-2.5 text-[0.95rem]">
           <div className="flex justify-between text-muted">
             <dt className="underline decoration-line underline-offset-4">
@@ -118,9 +163,19 @@ export function BookingWidget({ property: p, initial }: { property: Property; in
           </div>
         </dl>
       )}
+
       <p className="mt-4 flex items-start gap-2 text-xs leading-relaxed text-muted">
-        <ShieldCheck className="mt-0.5 size-4 shrink-0 text-sage-deep" aria-hidden />
-        You won&apos;t be charged yet. Nightly rates vary by date. Your final price, fees and taxes are confirmed at secure checkout.
+        {live ? (
+          <>
+            <Lock className="mt-0.5 size-4 shrink-0 text-sage-deep" aria-hidden />
+            Secure payment by Stripe. Your reservation is confirmed as soon as your payment goes through.
+          </>
+        ) : (
+          <>
+            <ShieldCheck className="mt-0.5 size-4 shrink-0 text-sage-deep" aria-hidden />
+            Nightly rates vary by date. Send us your dates and we&apos;ll confirm the price and availability.
+          </>
+        )}
       </p>
     </div>
   );
@@ -145,14 +200,30 @@ export function BookingWidget({ property: p, initial }: { property: Property; in
         <div className="container-x flex items-center justify-between gap-4 py-3">
           <div className="min-w-0">
             <p className="truncate">
-              <span className="text-lg font-bold text-text">{usd(p.pricePerNight)}</span>
-              <span className="text-sm text-muted"> / night</span>
+              {hasDates && quote.status === "ready" ? (
+                <>
+                  <span className="text-lg font-bold text-text">{money(quote.quote.total)}</span>
+                  <span className="text-sm text-muted"> total</span>
+                </>
+              ) : (
+                <>
+                  <span className="text-lg font-bold text-text">{usd(p.pricePerNight)}</span>
+                  <span className="text-sm text-muted"> / night</span>
+                </>
+              )}
             </p>
             <p className="truncate text-sm text-muted">{range?.from ? formatRange(range.from, range.to) : `Rated ${p.rating?.toFixed(2)} ★ · ${p.reviewCount} reviews`}</p>
           </div>
           {hasDates ? (
-            <button type="button" className="inline-flex h-12 shrink-0 items-center gap-1.5 rounded-full bg-clay px-6 font-semibold text-white">
-              Book now
+            <button
+              type="button"
+              onClick={() => {
+                setSheet(true);
+                setField(null);
+              }}
+              className="inline-flex h-12 shrink-0 items-center gap-1.5 rounded-full bg-clay px-6 font-semibold text-white"
+            >
+              {live ? "Review & book" : "Request to book"}
             </button>
           ) : (
             <button type="button" onClick={() => { setSheet(true); setField("dates"); }} className="h-12 shrink-0 rounded-full bg-ink px-6 font-semibold text-paper">

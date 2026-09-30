@@ -208,7 +208,7 @@ export default function CoHostingPage() {
           </Reveal>
           <Reveal delay={0.1} className="self-start rounded-[1.75rem] bg-paper p-6 shadow-soft ring-1 ring-line sm:p-10">
             <h3 className="font-display text-2xl text-ink">Tell us about your property</h3>
-            <ContactForm messagePlaceholder="Where is the property, how many bedrooms, and is it listed anywhere yet?" />
+            <ContactForm context="Co-hosting enquiry" messagePlaceholder="Where is the property, how many bedrooms, and is it listed anywhere yet?" />
           </Reveal>
         </div>
       </section>

@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowUpDown, Mail, PawPrint, Phone, PlugZap, SearchX, X } from "lucide-react";
+import { ArrowUpDown, CalendarX, Mail, PawPrint, Phone, PlugZap, SearchX, X } from "lucide-react";
 import clsx from "clsx";
 import { PropertyCard } from "@/components/property/PropertyCard";
 import { buttonClass } from "@/components/ui/Button";
@@ -32,10 +32,13 @@ export function PropertyExplorer({
   properties,
   search,
   initialSort,
+  availability,
 }: {
   properties: Property[];
   search: SearchState;
   initialSort?: string;
+  /** Live availability for the searched dates (null = no dates, or couldn't check) */
+  availability?: Record<string, { available: boolean }> | null;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -53,16 +56,24 @@ export function PropertyExplorer({
     setPetsOnly(search.pets > 0);
   }
 
+  const matching = useMemo(
+    () =>
+      properties.filter(
+        (p) => (!region || p.region === region) && p.guests >= guests && (!petsOnly || p.petFriendly) && (!evOnly || p.evCharging),
+      ),
+    [properties, region, guests, petsOnly, evOnly],
+  );
+  // Homes that match the filters but are already booked for the searched dates
+  const bookedOut = availability ? matching.filter((p) => availability[p.slug]?.available === false).length : 0;
+
   const results = useMemo(() => {
-    const list = properties.filter(
-      (p) => (!region || p.region === region) && p.guests >= guests && (!petsOnly || p.petFriendly) && (!evOnly || p.evCharging),
-    );
+    const list = availability ? matching.filter((p) => availability[p.slug]?.available !== false) : matching;
     const sorted = [...list];
     if (sort === "price-asc") sorted.sort((a, b) => a.pricePerNight - b.pricePerNight);
     if (sort === "price-desc") sorted.sort((a, b) => b.pricePerNight - a.pricePerNight);
     if (sort === "guests") sorted.sort((a, b) => b.guests - a.guests);
     return sorted;
-  }, [properties, region, guests, petsOnly, evOnly, sort]);
+  }, [matching, availability, sort]);
 
   // Showing everything in the default order? Group by destination so guests can orient themselves.
   const groups = useMemo(() => {
@@ -189,6 +200,7 @@ export function PropertyExplorer({
             </span>
             {guests > 2 && ` · ${guests} guests`}
             {search.start && ` · ${formatRange(search.start, search.end)}`}
+            {availability && results.length > 0 && <span className="ml-2 font-semibold text-sage-deep">· Available for your dates</span>}
           </p>
           {active.length > 0 && (
             <ul className="flex flex-wrap items-center gap-2">
@@ -213,13 +225,26 @@ export function PropertyExplorer({
           )}
         </div>
 
+        {bookedOut > 0 && results.length > 0 && (
+          <p className="-mt-6 mb-10 flex items-center gap-2 text-sm text-muted">
+            <CalendarX className="size-4 text-clay-deep" aria-hidden />
+            {bookedOut} other {bookedOut === 1 ? "home is" : "homes are"} already booked for these dates.
+          </p>
+        )}
+
         {results.length === 0 ? (
           <div className="mx-auto flex max-w-md flex-col items-center rounded-card border border-dashed border-line bg-paper px-6 py-16 text-center">
             <SearchX className="size-10 text-sage-deep" aria-hidden />
-            <h2 className="mt-5 font-display text-2xl text-ink">No homes match those filters</h2>
-            <p className="mt-2 text-muted">Try another destination or fewer filters. Our largest home sleeps 12.</p>
+            <h2 className="mt-5 font-display text-2xl text-ink">
+              {bookedOut > 0 ? "All booked for those dates" : "No homes match those filters"}
+            </h2>
+            <p className="mt-2 text-muted">
+              {bookedOut > 0
+                ? "Try different dates, or call us and we'll help you find the closest opening."
+                : "Try another destination or fewer filters. Our largest home sleeps 12."}
+            </p>
             <button type="button" className={buttonClass({ className: "mt-6" })} onClick={clearAll}>
-              Clear all filters
+              {bookedOut > 0 ? "See all homes" : "Clear all filters"}
             </button>
           </div>
         ) : groups ? (

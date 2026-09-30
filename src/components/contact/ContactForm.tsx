@@ -2,14 +2,13 @@
 
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { CircleCheck, Send } from "lucide-react";
+import { CircleCheck, Loader2, Send, TriangleAlert } from "lucide-react";
 import clsx from "clsx";
 
 const sources = ["Instagram", "Facebook", "Google", "Friend", "Email", "TikTok", "Airbnb", "VRBO", "Other"];
 
 type Errors = Partial<Record<"firstName" | "lastName" | "email" | "message", string>>;
 
-// Phase 1: validates and confirms in the UI. Phase 2 wires this to email/CRM.
 export interface Topic {
   label: string;
   /** Message prompt shown when this topic is picked */
@@ -19,8 +18,11 @@ export interface Topic {
 export function ContactForm({
   messagePlaceholder = "Dates, number of guests, which home you're interested in…",
   topics,
+  context,
 }: {
   messagePlaceholder?: string;
+  /** Labels the email to the host when there's no topic picker, e.g. "Co-hosting enquiry" */
+  context?: string;
   /** Optional "What can we help with?" picker; each topic swaps the message prompt */
   topics?: Topic[];
 } = {}) {
@@ -28,8 +30,10 @@ export function ContactForm({
   const [topic, setTopic] = useState(0);
   const placeholder = topics?.[topic]?.placeholder ?? messagePlaceholder;
   const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [serverError, setServerError] = useState("");
 
-  const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const data = new FormData(e.currentTarget);
     const next: Errors = {};
@@ -38,7 +42,24 @@ export function ContactForm({
     if (!/^\S+@\S+\.\S+$/.test(String(data.get("email")))) next.email = "Please enter a valid email address.";
     if (String(data.get("message")).trim().length < 10) next.message = "Tell us a little more (at least 10 characters).";
     setErrors(next);
-    if (Object.keys(next).length === 0) setSent(true);
+    if (Object.keys(next).length > 0 || sending) return;
+
+    setSending(true);
+    setServerError("");
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...Object.fromEntries(data), topic: topics?.[topic]?.label, context }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error ?? "We couldn't send your message.");
+      setSent(true);
+    } catch (err) {
+      setServerError(err instanceof Error ? err.message : "We couldn't send your message.");
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -102,8 +123,28 @@ export function ContactForm({
             />
             {errors.message && <p id="message-error" className="mt-1.5 text-sm text-clay-deep">{errors.message}</p>}
           </div>
-          <button type="submit" className="inline-flex h-13 items-center justify-center gap-2 rounded-full bg-ink px-8 font-semibold text-paper transition-colors hover:bg-ink-deep col-span-2 sm:justify-self-start">
-            Send message <Send className="size-4" aria-hidden />
+          {/* Honeypot: hidden from people, filled in by bots */}
+          <input type="text" name="company" tabIndex={-1} autoComplete="off" aria-hidden className="absolute left-[-9999px] size-px opacity-0" />
+          {serverError && (
+            <p role="alert" className="col-span-2 flex items-start gap-2 rounded-xl bg-clay/10 px-4 py-3 text-sm text-clay-deep">
+              <TriangleAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
+              {serverError}
+            </p>
+          )}
+          <button
+            type="submit"
+            disabled={sending}
+            className="col-span-2 inline-flex h-13 items-center justify-center gap-2 rounded-full bg-ink px-8 font-semibold text-paper transition-colors hover:bg-ink-deep disabled:opacity-60 sm:justify-self-start"
+          >
+            {sending ? (
+              <>
+                Sending… <Loader2 className="size-4 animate-spin" aria-hidden />
+              </>
+            ) : (
+              <>
+                Send message <Send className="size-4" aria-hidden />
+              </>
+            )}
           </button>
         </motion.form>
       )}

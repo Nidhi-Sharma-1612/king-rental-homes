@@ -18,7 +18,7 @@ export function Header() {
   const [openedAt, setOpenedAt] = useState(pathname);
 
   // Pages without a dark image hero get a solid header from the start.
-  const solidOnTop = /^\/properties\/.+/.test(pathname);
+  const solidOnTop = /^\/(properties\/.+|booking)/.test(pathname);
   const solid = scrolled || solidOnTop || open;
 
   useMotionValueEvent(scrollY, "change", (y) => setScrolled(y > 24));
