@@ -59,7 +59,7 @@ export function TrustStrip({
     },
     { Icon: CalendarHeart, value: <CountUp value={years} suffix="+" />, label: `Years hosting · since ${since}` },
     { Icon: House, value: <CountUp value={homes} />, label: "Homes in MA & CO" },
-    { Icon: PawPrint, value: <CountUp value={Math.round((petFriendly / homes) * 100)} suffix="%" />, label: "Pet-friendly homes" },
+    { Icon: PawPrint, value: <CountUp value={petFriendly} />, label: "Pet-friendly homes" },
   ];
 
   return (

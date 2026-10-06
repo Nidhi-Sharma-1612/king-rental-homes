@@ -11,7 +11,7 @@ import { searchAvailability } from "@/lib/server/booking";
 export const metadata: Metadata = {
   title: "Our Homes",
   description:
-    "Browse our six vacation homes near Boston's beaches and between Boulder & Denver. They're pet-friendly and fully stocked, with free parking.",
+    "Browse our vacation homes near Boston's beaches and between Boulder & Denver. Fully stocked, with free parking, and most are pet-friendly.",
 };
 
 export default async function PropertiesPage({ searchParams }: PageProps<"/properties">) {
@@ -32,7 +32,7 @@ export default async function PropertiesPage({ searchParams }: PageProps<"/prope
         image={photos.sunset}
         eyebrow="Book direct"
         title="Find your home base"
-        intro="Six hand-kept homes near Boston's beaches and between Boulder & Denver."
+        intro={`${properties.length} hand-kept homes near Boston's beaches and between Boulder & Denver.`}
         crumbs={[{ label: "Properties" }]}
       >
         <SearchBar initial={search} className="mt-8" />

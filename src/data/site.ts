@@ -14,7 +14,7 @@ export const site = {
   // "Meet your hosts" section shows the Chapel Way Manor exterior.
   hostPhoto: undefined as string | undefined,
   checkIn: "4:00 PM",
-  checkOut: "10:00 AM",
+  checkOut: "11:00 AM", // matches Hostaway (checkOutTime 11) for every listing
   // TODO: add the real profile URLs. The footer icons show either way; empty ones link to "#".
   socials: {
     facebook: "",
@@ -60,7 +60,7 @@ export const destinations: Destination[] = [
     name: "Boston & the South Shore",
     short: "Boston & Coast",
     blurb:
-      "Beach flats in Quincy, a short walk from the sand and a short ride into the city. There's also a woodland manor beside the Middlesex Fells.",
+      "Beach homes in Quincy, a family house in Milton, a restored Victorian in Melrose and a woodland manor beside the Middlesex Fells, all a short ride from the city.",
     image: photos.beachSkyline,
   },
   {

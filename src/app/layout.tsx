@@ -1,14 +1,16 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Manrope } from "next/font/google";
+import { Cormorant_Garamond, Manrope } from "next/font/google";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { site, photos } from "@/data/site";
 import "./globals.css";
 
-const fraunces = Fraunces({
+// Headings: a refined, high-contrast serif. Body: Manrope.
+const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
-  axes: ["SOFT", "opsz"],
-  variable: "--font-fraunces",
+  weight: ["500", "600"],
+  style: ["normal", "italic"],
+  variable: "--font-serif",
   display: "swap",
 });
 
@@ -40,7 +42,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" data-scroll-behavior="smooth" className={`${fraunces.variable} ${manrope.variable}`}>
+    <html lang="en" data-scroll-behavior="smooth" className={`${cormorant.variable} ${manrope.variable}`}>
       <body className="min-h-dvh overflow-x-clip">
         <a
           href="#main"

@@ -17,7 +17,7 @@ const features = [
   {
     Icon: PawPrint,
     title: "Pet-friendly stays",
-    text: "Every one of our homes welcomes well-behaved pets, because the whole family deserves a vacation.",
+    text: "Most of our homes welcome well-behaved pets, because the whole family deserves a vacation.",
   },
   {
     Icon: Laptop,

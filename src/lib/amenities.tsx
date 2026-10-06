@@ -56,7 +56,7 @@ const groups: [string, RegExp][] = [
 ];
 
 // Hostaway lists a few "amenities" that are really tags. Keep them out of the UI.
-const hidden = /^(internet|family|romantic|shopping|bird watching|whale watching|wildlife viewing|car recommended|toilet|shower|24-hour checkin)$/i;
+const hidden = /^(internet|family|romantic|historic|shopping|bird watching|whale watching|wildlife viewing|car recommended|car not necessary|toilet|shower|24-hour checkin|bay|marina|museums|zoo|boating|golf|sailing|swimming|near ocean|health beauty spa|hospital nearby|cleaning optional|emergency exit)$/i;
 
 export function groupAmenities(list: string[]) {
   const visible = list.filter((a) => !hidden.test(a));

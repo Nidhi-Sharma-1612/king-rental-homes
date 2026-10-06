@@ -179,7 +179,7 @@ export default function AboutPage() {
           <p className="eyebrow mb-4 text-sage-deep">Stay with us</p>
           <h2 className="display-lg mx-auto max-w-2xl text-balance text-ink">Come see what hosting done right feels like</h2>
           <p className="lede mx-auto mt-5 max-w-2xl text-muted">
-            Beach flats near Boston, a woodland manor beside the Fells, and a family house between Boulder &amp; Denver.
+            Beach homes in Quincy, a Victorian in Melrose, family houses in Milton and Stoneham, and a home between Boulder &amp; Denver.
           </p>
           <div className="mt-9 flex flex-wrap justify-center gap-3">
             <ButtonLink href="/properties" size="lg">

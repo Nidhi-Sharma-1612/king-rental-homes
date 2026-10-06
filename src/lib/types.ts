@@ -11,8 +11,6 @@ export interface Review {
 export interface Property {
   /** Hostaway listing id */
   id: number;
-  /** Internal id used by the live kingrentalhomes.com /reserve checkout */
-  siteId: number;
   slug: string;
   name: string;
   listingTitle: string;
@@ -36,7 +34,6 @@ export interface Property {
   amenities: string[];
   images: string[];
   reviews: Review[];
-  liveUrl: string;
 }
 
 export interface Destination {

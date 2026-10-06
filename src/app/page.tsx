@@ -37,7 +37,7 @@ export default function HomePage() {
             eyebrow="Our homes"
             actionClassName="max-md:hidden"
             title="Guest favorites"
-            intro="A woodland manor, a beach house and a Colorado retreat, all stocked, styled and hosted by us."
+            intro="A sample of our homes, from a woodland manor to a beach house and a Colorado retreat, all stocked, styled and hosted by us."
             action={
               <ButtonLink href="/properties" variant="outline">
                 View all {homes.length} homes <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" aria-hidden />
