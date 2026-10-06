@@ -13,12 +13,13 @@ import { ButtonLink } from "@/components/ui/Button";
 import { Stagger, StaggerItem } from "@/components/ui/Reveal";
 import { site } from "@/data/site";
 import { attractions, getFeaturedAttractions } from "@/data/attractions";
-import { getFeaturedProperties, getFeaturedReviews, getProperties, getStats } from "@/lib/properties";
+import { getFeaturedProperties, getFeaturedReviews, getStats } from "@/lib/properties";
+import { getLiveProperties } from "@/lib/server/listings";
 
-export default function HomePage() {
-  const homes = getProperties();
-  const stats = getStats();
-  const featured = getFeaturedProperties();
+export default async function HomePage() {
+  const homes = await getLiveProperties();
+  const stats = getStats(homes);
+  const featured = getFeaturedProperties(homes);
 
   return (
     <>

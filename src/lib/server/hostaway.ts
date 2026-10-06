@@ -176,3 +176,49 @@ export function createReservation(r: NewReservation) {
     }),
   });
 }
+
+// ── Listings & reviews (property detail pages) ──────────────────────────────
+export interface HostawayListing {
+  id: number;
+  name: string;
+  description: string | null;
+  city: string | null;
+  state: string | null;
+  personCapacity: number | null;
+  bedroomsNumber: number | null;
+  bedsNumber: number | null;
+  bathroomsNumber: number | null;
+  price: number | null;
+  checkInTimeStart: number | null; // hour 0-23
+  checkOutTime: number | null; // hour 0-23
+  houseRules: string | null;
+  averageReviewRating: number | null; // 0-10
+  listingImages?: { url: string; caption?: string | null; sortOrder?: number | null }[];
+  listingAmenities?: { amenityName: string }[];
+}
+
+/** `cacheSeconds` 0 = always fresh (detail pages); listing grids use a short cache. */
+export function getListing(listingId: number, { cacheSeconds = 0 } = {}) {
+  return hostaway<HostawayListing>(`/listings/${listingId}?includeResources=1`, cacheSeconds ? { revalidate: cacheSeconds } : {});
+}
+
+export function getListings({ cacheSeconds = 0 } = {}) {
+  return hostaway<HostawayListing[]>(`/listings?limit=100&includeResources=1`, cacheSeconds ? { revalidate: cacheSeconds } : {});
+}
+
+export interface HostawayReview {
+  id: number;
+  listingMapId: number;
+  type: string;
+  status: string;
+  rating: number | null; // 0-10
+  publicReview: string | null;
+  reviewerName: string | null;
+  departureDate: string | null;
+  submittedAt: string | null;
+}
+
+export function getGuestReviews(listingId: number, { cacheSeconds = 0 } = {}) {
+  const qs = new URLSearchParams({ "listingMapIds[]": String(listingId), type: "guest-to-host", limit: "500", sortBy: "departureDate", sortOrder: "desc" });
+  return hostaway<HostawayReview[]>(`/reviews?${qs}`, cacheSeconds ? { revalidate: cacheSeconds } : {});
+}

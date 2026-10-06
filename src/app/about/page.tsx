@@ -9,7 +9,8 @@ import { ButtonLink } from "@/components/ui/Button";
 import { Stars } from "@/components/ui/Rating";
 import { Reveal, Stagger, StaggerItem } from "@/components/ui/Reveal";
 import { photos, site } from "@/data/site";
-import { getProperties, getStats } from "@/lib/properties";
+import { getStats } from "@/lib/properties";
+import { getLiveProperties } from "@/lib/server/listings";
 
 export const metadata: Metadata = {
   title: "About Us",
@@ -50,9 +51,9 @@ const quotes = [
   { text: "Todd was a great host with excellent communication from start to finish.", name: "Alett R.", home: "Sheridan Green House" },
 ];
 
-export default function AboutPage() {
-  const stats = getStats();
-  const homes = getProperties();
+export default async function AboutPage() {
+  const homes = await getLiveProperties();
+  const stats = getStats(homes);
 
   return (
     <>

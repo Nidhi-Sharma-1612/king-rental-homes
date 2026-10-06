@@ -8,7 +8,7 @@ import { SectionHeading } from "@/components/ui/SectionHeading";
 import { ButtonLink } from "@/components/ui/Button";
 import { Reveal } from "@/components/ui/Reveal";
 import { attractions, getAttraction, getAttractionsByRegion } from "@/data/attractions";
-import { getPropertiesByRegion } from "@/lib/properties";
+import { getLivePropertiesByRegion } from "@/lib/server/listings";
 
 export function generateStaticParams() {
   return attractions.map((a) => ({ slug: a.slug }));
@@ -28,7 +28,7 @@ export default async function AttractionPage({ params }: PageProps<"/attractions
   const a = getAttraction((await params).slug);
   if (!a) notFound();
 
-  const allHomes = getPropertiesByRegion(a.region);
+  const allHomes = await getLivePropertiesByRegion(a.region);
   const homes = allHomes.slice(0, 3);
   // Lead with the first sentence; the rest reads better as body copy.
   const [lead, ...rest] = a.description.split(/(?<=[.!?])\s+/);

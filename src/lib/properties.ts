@@ -1,7 +1,7 @@
 import { properties } from "@/data/properties";
 import type { Property, Region, Review } from "@/lib/types";
 
-// Phase 2: swap these for Hostaway API calls, keeping the same signatures.
+// Saved copy of every home. Live Hostaway data is merged in by src/lib/server/listings.ts.
 
 export function getProperties(): Property[] {
   return properties;
@@ -18,11 +18,11 @@ export function getPropertiesByRegion(region: Region): Property[] {
 /** One of each kind of stay for the home page: woodland manor, beach house, Colorado. */
 const FEATURED = ["stoneham-chapel-way-manor", "quincy-beach-house", "broomfield-sheridan-green-house"];
 
-export function getFeaturedProperties(): Property[] {
-  return FEATURED.map((slug) => getProperty(slug)).filter((p): p is Property => !!p);
+export function getFeaturedProperties(list: Property[] = properties): Property[] {
+  return FEATURED.map((slug) => list.find((p) => p.slug === slug)).filter((p): p is Property => !!p);
 }
 
-export function getStats() {
+export function getStats(properties: Property[] = getProperties()) {
   const reviewTotal = properties.reduce((sum, p) => sum + p.reviewCount, 0);
   const weighted = properties.reduce((sum, p) => sum + (p.rating ?? 0) * p.reviewCount, 0);
   return {

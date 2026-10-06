@@ -34,6 +34,10 @@ export interface Property {
   amenities: string[];
   images: string[];
   reviews: Review[];
+  /** From Hostaway on detail pages, e.g. "4:00 PM" */
+  checkInTime?: string;
+  checkOutTime?: string;
+  houseRules?: string[];
 }
 
 export interface Destination {

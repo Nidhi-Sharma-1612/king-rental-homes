@@ -8,7 +8,8 @@ import { SectionHeading } from "@/components/ui/SectionHeading";
 import { buttonClass } from "@/components/ui/Button";
 import { Reveal, Stagger, StaggerItem } from "@/components/ui/Reveal";
 import { photos, site } from "@/data/site";
-import { getProperties, getStats } from "@/lib/properties";
+import { getStats } from "@/lib/properties";
+import { getLiveProperties } from "@/lib/server/listings";
 
 export const metadata: Metadata = {
   title: "Co Hosting",
@@ -31,9 +32,9 @@ const steps = [
   { title: "Hands-on hosting", text: "We manage the day-to-day and keep you informed, and we never outsource the details." },
 ];
 
-export default function CoHostingPage() {
-  const stats = getStats();
-  const homes = getProperties();
+export default async function CoHostingPage() {
+  const homes = await getLiveProperties();
+  const stats = getStats(homes);
   const proof = [
     { value: stats.averageRating?.toFixed(2) ?? "", label: "Average guest rating" },
     { value: `${stats.reviewTotal}`, label: "Guest reviews" },

@@ -3,7 +3,7 @@ import { PageHero } from "@/components/layout/PageHero";
 import { SearchBar } from "@/components/booking/SearchBar";
 import { PropertyExplorer } from "@/components/property/PropertyExplorer";
 import { photos } from "@/data/site";
-import { getProperties } from "@/lib/properties";
+import { getLiveProperties } from "@/lib/server/listings";
 import { parseSearch } from "@/lib/search";
 import { format, isAfter } from "date-fns";
 import { searchAvailability } from "@/lib/server/booking";
@@ -18,7 +18,7 @@ export default async function PropertiesPage({ searchParams }: PageProps<"/prope
   const params = await searchParams;
   const search = parseSearch(params);
   const sort = typeof params.sort === "string" ? params.sort : undefined;
-  const properties = getProperties();
+  const properties = await getLiveProperties();
   // With dates, only show homes that are actually free (live from Hostaway).
   const availability =
     search.start && search.end && isAfter(search.end, search.start)

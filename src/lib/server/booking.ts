@@ -1,4 +1,5 @@
 import "server-only";
+import { unstable_rethrow } from "next/navigation";
 import { addDays, differenceInCalendarDays, format, isValid, parseISO, startOfToday } from "date-fns";
 import type Stripe from "stripe";
 import { bookingEnabled, env, hostawayConfigured } from "@/lib/server/env";
@@ -104,6 +105,7 @@ export async function searchAvailability(properties: Property[], arrival: string
     );
     return Object.fromEntries(entries);
   } catch (error) {
+    unstable_rethrow(error);
     console.error("[search] availability check failed", error);
     return null;
   }

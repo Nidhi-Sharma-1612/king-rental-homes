@@ -14,15 +14,14 @@ import { ShareButton } from "@/components/property/ShareButton";
 import { Rating } from "@/components/ui/Rating";
 import { Reveal } from "@/components/ui/Reveal";
 import { site } from "@/data/site";
-import { getProperties, getProperty } from "@/lib/properties";
+import { getLiveProperties, getLiveProperty } from "@/lib/server/listings";
 
-export function generateStaticParams() {
-  return getProperties().map((p) => ({ slug: p.slug }));
-}
+// Rendered on every request so the details always match Hostaway (see getLiveProperty).
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: PageProps<"/properties/[slug]">): Promise<Metadata> {
   const { slug } = await params;
-  const p = getProperty(slug);
+  const p = (await getLiveProperty(slug))?.property;
   if (!p) return {};
   return {
     title: `${p.name}, ${p.city}`,
@@ -33,10 +32,11 @@ export async function generateMetadata({ params }: PageProps<"/properties/[slug]
 
 export default async function PropertyPage({ params }: PageProps<"/properties/[slug]">) {
   const { slug } = await params;
-  const p = getProperty(slug);
+  const p = (await getLiveProperty(slug))?.property;
   if (!p) notFound();
+  const selfCheckIn = p.amenities.some((a) => /contactless check-in|24-hour checkin/i.test(a));
 
-  const others = getProperties()
+  const others = (await getLiveProperties())
     .filter((o) => o.slug !== p.slug)
     .sort((a, b) => Number(b.region === p.region) - Number(a.region === p.region))
     .slice(0, 3);
@@ -47,15 +47,21 @@ export default async function PropertyPage({ params }: PageProps<"/properties/[s
         <nav aria-label="Breadcrumb" className="mb-5">
           <ol className="flex flex-wrap items-center gap-1.5 text-sm text-muted">
             <li>
-              <Link href="/" className="hit hover:text-ink">Home</Link>
+              <Link href="/" className="hit hover:text-ink">
+                Home
+              </Link>
             </li>
             <li className="flex items-center gap-1.5">
               <ChevronRight className="size-3.5" aria-hidden />
-              <Link href="/properties" className="hit hover:text-ink">Properties</Link>
+              <Link href="/properties" className="hit hover:text-ink">
+                Properties
+              </Link>
             </li>
             <li className="flex items-center gap-1.5">
               <ChevronRight className="size-3.5" aria-hidden />
-              <span aria-current="page" className="text-text">{p.name}</span>
+              <span aria-current="page" className="text-text">
+                {p.name}
+              </span>
             </li>
           </ol>
         </nav>
@@ -120,9 +126,11 @@ export default async function PropertyPage({ params }: PageProps<"/properties/[s
             <Section title="Good to know">
               <ul className="grid gap-4 sm:grid-cols-3">
                 {[
-                  { Icon: Clock, title: "Check-in", text: `From ${site.checkIn}` },
-                  { Icon: Clock, title: "Check-out", text: `By ${site.checkOut}` },
-                  { Icon: KeyRound, title: "Self check-in", text: "Keyless entry, with details sent before arrival" },
+                  { Icon: Clock, title: "Check-in", text: `From ${p.checkInTime ?? site.checkIn}` },
+                  { Icon: Clock, title: "Check-out", text: `By ${p.checkOutTime ?? site.checkOut}` },
+                  ...(selfCheckIn
+                    ? [{ Icon: KeyRound, title: "Self check-in", text: "Contactless check-in, with details sent before arrival" }]
+                    : []),
                 ].map(({ Icon, title, text }) => (
                   <li key={title} className="rounded-2xl border border-line bg-paper p-5">
                     <Icon className="size-5 text-sage-deep" aria-hidden />
@@ -131,6 +139,19 @@ export default async function PropertyPage({ params }: PageProps<"/properties/[s
                   </li>
                 ))}
               </ul>
+              {p.houseRules && p.houseRules.length > 0 && (
+                <div className="mt-6 rounded-2xl border border-line bg-paper p-5 sm:p-6">
+                  <p className="font-semibold text-text">House rules</p>
+                  <ul className="mt-3 space-y-2 text-sm text-muted">
+                    {p.houseRules.map((rule) => (
+                      <li key={rule} className="flex gap-2.5">
+                        <span className="mt-2 size-1.5 shrink-0 rounded-full bg-sage" aria-hidden />
+                        {rule}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </Section>
 
             <Section title="Where you'll be">
@@ -172,27 +193,29 @@ export default async function PropertyPage({ params }: PageProps<"/properties/[s
       </div>
 
       {/* Reviews */}
-      <section className="mt-16 border-t border-line bg-paper/60 py-16 lg:mt-20 lg:py-20" aria-labelledby="reviews-title">
-        <div className="container-x">
-          <div className="mb-10 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="eyebrow mb-3 text-sage-deep">Guest reviews</p>
-              <h2 id="reviews-title" className="display-md text-ink">
-                Rated {p.rating?.toFixed(2)} from {p.reviewCount} stays
-              </h2>
+      {p.reviews.length > 0 && (
+        <section className="mt-16 border-t border-line bg-paper/60 py-16 lg:mt-20 lg:py-20" aria-labelledby="reviews-title">
+          <div className="container-x">
+            <div className="mb-10 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="eyebrow mb-3 text-sage-deep">Guest reviews</p>
+                <h2 id="reviews-title" className="display-md text-ink">
+                  Rated {p.rating?.toFixed(2)} from {p.reviewCount} stays
+                </h2>
+              </div>
+              <div className="flex items-center gap-3 rounded-full border border-line bg-paper px-5 py-3">
+                <Sparkles className="size-5 text-clay" aria-hidden />
+                <span className="text-sm font-semibold text-text">Consistently 5-star hosting</span>
+              </div>
             </div>
-            <div className="flex items-center gap-3 rounded-full border border-line bg-paper px-5 py-3">
-              <Sparkles className="size-5 text-clay" aria-hidden />
-              <span className="text-sm font-semibold text-text">Consistently 5-star hosting</span>
+            <div className="no-scrollbar relative -mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 md:mx-0 md:grid md:grid-cols-2 md:overflow-visible md:px-0 xl:grid-cols-3">
+              {p.reviews.slice(0, 6).map((r) => (
+                <ReviewCard key={r.name + r.date} review={r} className="w-[85%] shrink-0 snap-center sm:w-[60%] md:w-auto" />
+              ))}
             </div>
           </div>
-          <div className="no-scrollbar relative -mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 md:mx-0 md:grid md:grid-cols-2 md:overflow-visible md:px-0 xl:grid-cols-3">
-            {p.reviews.slice(0, 6).map((r) => (
-              <ReviewCard key={r.name + r.date} review={r} className="w-[85%] shrink-0 snap-center sm:w-[60%] md:w-auto" />
-            ))}
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* More homes */}
       <section className="container-x py-16 lg:py-24" aria-labelledby="more-title">
